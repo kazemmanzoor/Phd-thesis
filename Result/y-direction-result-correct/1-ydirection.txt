@@ -1,0 +1,13 @@
+tail -n 300 vel-5na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-5na.dat
+tail -n 300 vel-10na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-10na.dat
+tail -n 300 vel-15na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-15na.dat
+tail -n 300 vel-20na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-20na.dat
+tail -n 300 vel-25na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-25na.dat
+tail -n 300 vel-30na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-30na.dat
+tail -n 300 vel-35na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-35na.dat
+tail -n 300 vel-40na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-40na.dat
+tail -n 300 vel-45na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-45na.dat
+tail -n 300 vel-50na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-50na.dat
+tail -n 300 vel-55na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-55na.dat
+tail -n 300 vel-60na-300K-0x-0.025y.profile | awk '{print $2 ,"\t" $5}' > y-direction-60na.dat
+
