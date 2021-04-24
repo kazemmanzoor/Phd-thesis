@@ -49,11 +49,13 @@ plt.plot(data10[:,0]/10, data10[:,1]*100000,label='$V_y$-60na-$\sigma=0.2706 C/m
 
 plt.xlim([0,5])
 plt.xlabel('Channel Height(nm)')
-plt.xticks(np.arange(0.0,5.0,0.25))#np.around(np.linspace(0,5,20),decimals=1))
+plt.xticks(np.arange(-0.5,5.5,0.25))#np.around(np.linspace(0,5,20),decimals=1))
 plt.ylabel('EOF(m/s)')
 plt.title("$V_y$ VS $V_x$")
-plt.axhline(2)
-plt.axvline(2)
+plt.axvline(5,ls='--',c='r')
+plt.axvline(5.21407,ls='--',c='r')
+plt.axvline(0,ls='--',c='y')
+plt.axvline(-0.214069,ls='--',c='y')
 
 plt.legend()
 
