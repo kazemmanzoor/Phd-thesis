@@ -40,3 +40,5 @@ for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"; ~/Downloads/pac
 
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"; more bottom.txt | awk -v i="$i" -v numberofwater="$numberofwater" -v numberofions="$numberofions"  '{print "\t" $1-9460+1+(3*(numberofwater-i))+numberofions+(numberofions+i)"\t" numberofwater-i+numberofions+numberofions+i "\t"5"\t"0"\t" $5 "\t"$6"\t"$7 }' > modify-bottom.txt  ; cd .. ; done
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"; more top.txt | awk -v i="$i" -v numberofwater="$numberofwater" -v numberofions="$numberofions" -v numberofphosphorene="$numberofphosphorene" '{print "\t" $1-9980+1+numberofphosphorene+ 3*(numberofwater-i)+numberofions+(numberofions+i)"\t" (numberofwater-i)+numberofions+(numberofions+i)+1 "\t"6"\t"0"\t" $5 "\t"$6"\t"$7 }' > modify-top.txt  ; cd .. ; done
+
+for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na";cat modify-bottom.txt modify-top.txt > channel.txt; cd .. ; done
