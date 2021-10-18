@@ -13,7 +13,7 @@ for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do mkdir $i"na"; done
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do mkdir $i"na"/$i"na-Ex"; done
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do mkdir $i"na"/$i"na-Ey"; done
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do mkdir $i"na"/source; done
-for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cp ../../SOURCE-FILE/*.* $i"na"/source/. ; done
+for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cp ../SOURCE-FILE/*.* $i"na"/source/. ; done
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cat > $i"na"/source/mixture-$i"na".in << EOF  
 tolerance 2.0
 filetype pdb
@@ -40,7 +40,7 @@ EOF
 done
 
 
-#for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"/source;echo "packmol for $i-na job start"; ~/Downloads/packmol/packmol <mixture-$i"na".in > log-$i"na" ;echo "$i-na job done"; cp configuration.pdb ../.;cd .. ; done
+#for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"/source ;echo "######### packmol for $i-na job start ##########"; ~/packmol/packmol <mixture-$i"na".in > log-$i"na" ;echo "########### $i-na job done ##############"; cp configuration.pdb ../.;cd .. ; done
 
 
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cd $i"na"/source; more $allotrop-bottom.txt | awk -v i="$i" -v numberofwater="$numberofwater" -v numberofions="$numberofions"  '{print "\t" $1-9460+1+(3*(numberofwater-i))+numberofions+(numberofions+i)"\t" numberofwater-i+numberofions+numberofions+i+1 "\t"5"\t"0"\t" $5 "\t"$6"\t"$7 }' > $allotrop-modify-bottom.txt  ; cd ../.. ; done
@@ -61,7 +61,7 @@ echo both
 
 variable	q equal $i
 variable	area equal 1885.1699984e-20
-variable       sigma equal \${q} *1.60217662e-19/(2* \${area} )
+variable       sigma equal \${q}*1.60217662e-19/(2*\${area})
 print          "sigma:  \${sigma} "
 variable       T equal 300
 variable       Ex equal 0.025
@@ -100,6 +100,8 @@ kspace_modify slab 3.0
 
 log             log-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.log
 
+special_bonds   charmm
+
 group           water type 1 2
 group           channel type 5 6
 group           flow type 1 2 3 4
@@ -122,22 +124,42 @@ compute Press2 all pressure Temp  ke
 
 
 thermo          10000
-thermo_style  custom step temp c_Temp lx ly lz cpu density  c_Press c_Press1 c_Press2
+thermo_style  multi
 
 velocity        channel set 0 0 0 units box
 fix             setforce1 channel setforce 0 0 0
 fix             Spring channel spring/self  200
+
+
+dump            2 all atom 100 solvate-minimize.dump
+thermo 100
+minimize 0.0 0.0 10000 10000
+undump 2
+
 fix             2 water shake 1e-6 500 0 m 1.0 a 1
 
+thermo          10000
+timestep        0.001
+
+thermo_style  custom step   temp c_Temp lx ly lz cpu density  c_Press c_Press1 c_Press2
+#fix             1 flow nvt temp \$T \$T 100
 
 
-dump            1 all custom 25000 rerun-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.txt id x y z vx vy vz fy fx fz #rerun command
+dump            1 all custom 25000 rerun-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.txt id x y z vx vy vz fy fx fz #rerun command
 dump_modify     1 sort id
-dump            2 all xyz/gz 25000 DUMP-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz.gz
-dump            3 all atom 25000 solvate-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.lammpstrj
+dump            2 all xyz/gz 25000 DUMP-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz.gz
+dump            3 all atom 25000 solvate-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.lammpstrj
+
+#run             50000
+#unfix      1
+
+#timestep  0.5
+fix       FixNVT1 flow nvt temp \$T \$T 100
 
 thermo   50000
 thermo_style custom step temp  c_Temp press density
+
+#run 20000
 
 ############################################################## equilibrium #####################################
 reset_timestep 0
@@ -164,11 +186,11 @@ compute		CChunkNA1  NA  chunk/atom bin/1d z 0 0.5
 compute		CChunkCL1  CL  chunk/atom bin/1d z 0 0.5
 compute		CChunkWATER1  water   chunk/atom bin/1d z 0 0.5
 
-fix   	        FChunkO1  O   ave/chunk 1 100000 100000 CChunkO1  density/mass density/number temp norm sample file O-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkH1  H   ave/chunk 1 100000 100000 CChunkH1  density/mass density/number temp norm sample file H-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkNA1  NA  ave/chunk 1 100000 100000 CChunkNA1  density/mass density/number temp norm sample file NA-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkCL1  CL  ave/chunk 1 100000 100000 CChunkCL1  density/mass density/number temp norm sample file CL-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkWater1  water  ave/chunk 1 100000 100000 CChunkWATER1  density/mass density/number temp norm sample file WATER-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix   	        FChunkO  O   ave/chunk 1 100000 100000 CChunkO1  density/mass density/number temp norm sample file O-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkH  H   ave/chunk 1 100000 100000 CChunkH1  density/mass density/number temp norm sample file H-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkNA  NA  ave/chunk 1 100000 100000 CChunkNA1  density/mass density/number temp norm sample file NA-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkCL  CL  ave/chunk 1 100000 100000 CChunkCL1  density/mass density/number temp norm sample file CL-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkWater  water  ave/chunk 1 100000 100000 CChunkWATER1  density/mass density/number temp norm sample file WATER-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
 
 
 run 500000 #1ns
@@ -186,6 +208,7 @@ compute cc1CL CL chunk/atom bin/1d z 0.0 0.5
 compute cc1NA NA chunk/atom bin/1d z 0.0 0.5
 compute cc1Water water chunk/atom bin/1d z 0.0 0.5
 
+#fix 8 flow ave/chunk 500000 1 500000 cc1 vx vy file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile #
 fix 8 flow ave/chunk 1 2000000 2000000 cc1 vx vy norm sample file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile
 fix 80 flow ave/chunk 1 2000000 2000000 cc1f vx vy norm sample file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-1bin.profile
 fix 9 CL   ave/chunk 1 2000000 2000000 cc1CL vx vy norm sample file vel-$allotrop-cl-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile
@@ -246,7 +269,7 @@ echo both
 
 variable	q equal $i
 variable	area equal 1885.1699984e-20
-variable       sigma equal \${q} *1.60217662e-19/(2* \${area} )
+variable       sigma equal \${q}*1.60217662e-19/(2*\${area})
 print          "sigma:  \${sigma} "
 variable       T equal 300
 variable       Ex equal 0.0
@@ -307,28 +330,47 @@ compute Press2 all pressure Temp  ke
 
 
 thermo          10000
-thermo_style  custom step temp c_Temp lx ly lz cpu density  c_Press c_Press1 c_Press2
+thermo_style  multi
 
 velocity        channel set 0 0 0 units box
 fix             setforce1 channel setforce 0 0 0
 fix             Spring channel spring/self  200
+
+
+dump            2 all atom 100 solvate-minimize.dump
+thermo 100
+minimize 0.0 0.0 10000 10000
+undump 2
+
 fix             2 water shake 1e-6 500 0 m 1.0 a 1
 
+thermo          10000
+timestep        0.001
+
+thermo_style  custom step   temp c_Temp lx ly lz cpu density  c_Press c_Press1 c_Press2
+#fix             1 flow nvt temp \$T \$T 100
 
 
-dump            1 all custom 25000 rerun-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.txt id x y z vx vy vz fy fx fz #rerun command
+dump            1 all custom 25000 rerun-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.txt id x y z vx vy vz fy fx fz #rerun command
 dump_modify     1 sort id
-dump            2 all xyz/gz 25000 DUMP-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz.gz
-dump            3 all atom 25000 solvate-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.lammpstrj
+dump            2 all xyz/gz 25000 DUMP-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz.gz
+dump            3 all atom 25000 solvate-black-\${q}na-\${T}K-\${Ex}x-\${Ey}y.lammpstrj
+
+#run             50000
+#unfix      1
+
+#timestep  0.5
+fix       FixNVT1 flow nvt temp \$T \$T 100
 
 thermo   50000
 thermo_style custom step temp  c_Temp press density
+
+#run 20000
 
 ############################################################## equilibrium #####################################
 reset_timestep 0
 
 thermo   100000
-
 timestep  2
 
 compute		CChunkO  O   chunk/atom bin/1d z 0 0.1
@@ -349,11 +391,11 @@ compute		CChunkNA1  NA  chunk/atom bin/1d z 0 0.5
 compute		CChunkCL1  CL  chunk/atom bin/1d z 0 0.5
 compute		CChunkWATER1  water   chunk/atom bin/1d z 0 0.5
 
-fix   	        FChunkO1  O   ave/chunk 1 100000 100000 CChunkO1  density/mass density/number temp norm sample file O-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkH1  H   ave/chunk 1 100000 100000 CChunkH1  density/mass density/number temp norm sample file H-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkNA1  NA  ave/chunk 1 100000 100000 CChunkNA1  density/mass density/number temp norm sample file NA-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkCL1  CL  ave/chunk 1 100000 100000 CChunkCL1  density/mass density/number temp norm sample file CL-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
-fix             FChunkWater1  water  ave/chunk 1 100000 100000 CChunkWATER1  density/mass density/number temp norm sample file WATER-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix   	        FChunkO  O   ave/chunk 1 100000 100000 CChunkO1  density/mass density/number temp norm sample file O-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkH  H   ave/chunk 1 100000 100000 CChunkH1  density/mass density/number temp norm sample file H-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkNA  NA  ave/chunk 1 100000 100000 CChunkNA1  density/mass density/number temp norm sample file NA-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkCL  CL  ave/chunk 1 100000 100000 CChunkCL1  density/mass density/number temp norm sample file CL-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
+fix             FChunkWater  water  ave/chunk 1 100000 100000 CChunkWATER1  density/mass density/number temp norm sample file WATER-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-0.5bin.density
 
 
 run 500000 #1ns
@@ -362,8 +404,8 @@ run 500000 #1ns
 ############################################################## efield #####################################
 
 
-dump            33 all  xyz  100000  all-$allotrop-efield-'${q}'na-${T}K-${Ex}x-${Ey}y.xyz             #5000 all-efield.xyz
-dump            4 flow xyz  100000  NoWater-$allotrop-efield-'${q}'na-${T}K-${Ex}x-${Ey}y.xyz          #5000 NoWater-efield.xyz
+dump            33 all  xyz  100000  all-$allotrop-efield-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz             #5000 all-efield.xyz
+dump            4 flow xyz  100000  NoWater-$allotrop-efield-\${q}na-\${T}K-\${Ex}x-\${Ey}y.xyz          #5000 NoWater-efield.xyz
 
 compute cc1 flow chunk/atom bin/1d z 0.0 0.5
 compute cc1f flow chunk/atom bin/1d z 0.0 1
@@ -371,6 +413,7 @@ compute cc1CL CL chunk/atom bin/1d z 0.0 0.5
 compute cc1NA NA chunk/atom bin/1d z 0.0 0.5
 compute cc1Water water chunk/atom bin/1d z 0.0 0.5
 
+#fix 8 flow ave/chunk 500000 1 500000 cc1 vx vy file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile #
 fix 8 flow ave/chunk 1 2000000 2000000 cc1 vx vy norm sample file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile
 fix 80 flow ave/chunk 1 2000000 2000000 cc1f vx vy norm sample file vel-$allotrop-\${q}na-\${T}K-\${Ex}x-\${Ey}y-1bin.profile
 fix 9 CL   ave/chunk 1 2000000 2000000 cc1CL vx vy norm sample file vel-$allotrop-cl-\${q}na-\${T}K-\${Ex}x-\${Ey}y.profile
@@ -411,6 +454,7 @@ fix		1aa water ave/time 100000 1 100000 c_myChunk[*] file dipole-$allotrop-\${q}
 run              4000000  # 8 nano secend
 
 run	         20000000 #40ns for equilibrium
+
 EOF
  
 echo "in $i-na-job done!!"
@@ -419,7 +463,7 @@ done
 
 
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cat > $i"na"/$i"na"-Ex/run-mix-2021.sh << EOF 
-time mpirun -np 2 ~/lammps-29Sep2021/src/lmp_intel_cpu_intelmpi -sf gpu -pk gpu 1 <$allotrop-$i na-Ex.in
+time mpirun -np 2 ~/lammps-29Sep2021/src/lmp_intel_cpu_intelmpi -sf gpu -pk gpu 1 <$allotrop-\{$i}na-Ex.in
 
 EOF
 
@@ -428,7 +472,7 @@ chmod +x $i"na"/$i"na"-Ey/run-mix-2021.sh
 done
 
 for i in 5 10 15 20 25 30 35 40 45 50 55 60 65 70; do cat > $i"na"/$i"na"-Ey/run-mix-2021.sh << EOF 
-time mpirun -np 2 ~/lammps-29Sep2021/src/lmp_intel_cpu_intelmpi -sf gpu -pk gpu 1 <$allotrop-$ina-Ey.in
+time mpirun -np 2 ~/lammps-29Sep2021/src/lmp_intel_cpu_intelmpi -sf gpu -pk gpu 1 <$allotrop-\{$i}na-Ey.in
 
 EOF
 
